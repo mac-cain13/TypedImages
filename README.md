@@ -85,11 +85,50 @@ Runtime validation with [`R.validate()`](Documentation/Examples.md#runtime-valid
 
 ## Installation
 
-[CocoaPods](http://cocoapods.org) is the recommended way of installation, as this avoids including any binary files into your project.
+**SwiftPackageManager** is the recommended way of installation, as this uses the built in XCode package manager.
 
-_Note on Carthage: R.swift is a tool used in a build step, it is not a dynamic library. Therefore [it is not possible](https://github.com/mac-cain13/R.swift/issues/42) to install it with Carthage._
+### SwiftPackageManager (recommended)
+#### 1) Add build tools to project
+1. Create a folder called `BuildTools` in the same folder as your xcodeproj file
+2. In this folder, create a file called `Package.swift`, with the following contents:
+```swift
+// swift-tools-version:5.1
+import PackageDescription
 
-### CocoaPods (recommended)
+let package = Package(
+    name: "BuildTools",
+	platforms: [.macOS(.v10_11)],
+    dependencies: [
+        .package(url: "https://github.com/mac-cain13/R.swift", from: "5.1.0"),
+    ]
+)
+```
+
+#### 2) Add the R.swift Library to your app target
+1. Go to File -> Swift Packages -> Add Package Dependency
+2. Paste the url of the **R.swift.Library** repository: [https://github.com/mac-cain13/R.swift.Library](https://github.com/mac-cain13/R.swift.Library)
+3. Select 'Version: up to next major' and press *Next*
+4. **Tick any targets from which you will use R**, and press **Finish**
+
+#### 3) Add Build phases to your app target
+1. Click on your project in the file list, choose your target under `TARGETS`, click the `Build Phases` tab
+2. Add a `New Run Script Phase` by clicking the little plus icon in the top left
+3. Drag the new `Run Script` phase **above** the `Compile Sources` phase, expand it and paste the following script:  
+   ```bash
+   cd BuildTools
+   #swift package update #Uncomment this line temporarily to update the version of R.swift used based on your BuildTools/Package.swift file
+   swift run -c release rswift generate "$SRCROOT/R.generated.swift"
+   ```
+4. Add `$TEMP_DIR/rswift-lastrun` to the "Input Files" and `$SRCROOT/R.generated.swift` to the "Output Files" of the Build Phase
+5. Build your project, in Finder you will now see a `R.generated.swift` in the `$SRCROOT`-folder
+
+#### 4) Add the generated file to your project
+1) Drag the `R.generated.swift` file into your project
+2) **Uncheck** `Copy items if needed` - so that the file is added still in its current location (as it will be automatically regenerated when you build your project)
+3) Once the file is added, you're ready to use R.swift!
+
+
+### CocoaPods
 
 1. Add `pod 'R.swift'` to your [Podfile](http://cocoapods.org/#get_started) and run `pod install`
 2. In Xcode: Click on your project in the file list, choose your target under `TARGETS`, click the `Build Phases` tab and add a `New Run Script Phase` by clicking the little plus icon in the top left
@@ -130,6 +169,8 @@ If you see a build error `No such module 'Rswift'` when trying to `#import Rswif
 
 Head over to the [R.Swift.Library](https://github.com/mac-cain13/R.swift.Library) repo and follow the [Swift Package Manager installation instructions](https://github.com/mac-cain13/R.swift.Library#swift-package-manager-requires-xcode-11).
 
+### Carthage NOT supported
+R.swift is a tool used in a build step, it is not a dynamic library. Therefore [it is not possible](https://github.com/mac-cain13/R.swift/issues/42) to install it with Carthage._
 ### Manually
 
 0. Add the [R.swift.Library](https://github.com/mac-cain13/R.swift.Library#Installation) to your project
