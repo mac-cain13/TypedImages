@@ -23,9 +23,9 @@ public struct CallInformation {
   let targetName: String
   let bundleIdentifier: String
   let productModuleName: String
+  let hostingBundleName: String?
   let infoPlistFile: URL
   let codeSignEntitlements: URL?
-
   let scriptInputFiles: [String]
   let scriptOutputFiles: [String]
   let lastRunURL: URL
@@ -49,6 +49,7 @@ public struct CallInformation {
     targetName: String,
     bundleIdentifier: String,
     productModuleName: String,
+    hostingBundleName: String?,
     infoPlistFile: URL,
     codeSignEntitlements: URL?,
 
@@ -74,6 +75,7 @@ public struct CallInformation {
     self.targetName = targetName
     self.bundleIdentifier = bundleIdentifier
     self.productModuleName = productModuleName
+    self.hostingBundleName = hostingBundleName
     self.infoPlistFile = infoPlistFile
     self.codeSignEntitlements = codeSignEntitlements
 
