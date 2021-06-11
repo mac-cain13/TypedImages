@@ -22,9 +22,10 @@ struct Resources {
   let storyboards: [Storyboard]
   let resourceFiles: [ResourceFile]
   let localizableStrings: [LocalizableStrings]
-    
-  let reusables: [Reusable]
+  let bundles: [Bundle]
 
+  let reusables: [Reusable]
+  
   init(resourceURLs: [URL], fileManager: FileManager) {
     
     var assetFolders = [AssetFolder]()
@@ -34,7 +35,8 @@ struct Resources {
     var storyboards = [Storyboard]()
     var resourceFiles = [ResourceFile]()
     var localizableStrings = [LocalizableStrings]()
-    
+    var bundles = [Bundle]()
+
     resourceURLs.forEach { url in
       if let nib = tryResourceParsing({ try Nib(url: url) }) {
         nibs.append(nib)
@@ -52,7 +54,14 @@ struct Resources {
 
       // All previous assets can also possibly be used as files
       if let resourceFile = tryResourceParsing({ try ResourceFile(url: url) }) {
-        resourceFiles.append(resourceFile)
+        if resourceFile.pathExtension == "bundle" {
+          let bundle = Bundle(bundleUrl: url, fileManager: fileManager)
+          if bundle.resources.resourceFiles.count != 0 {
+            bundles.append(bundle)
+          }
+        } else {
+          resourceFiles.append(resourceFile)
+        }
       }
     }
     
@@ -63,6 +72,7 @@ struct Resources {
     self.storyboards = storyboards
     self.resourceFiles = resourceFiles
     self.localizableStrings = localizableStrings
+    self.bundles = bundles
     
     reusables = (nibs.map { $0 as ReusableContainer } + storyboards.map { $0 as ReusableContainer })
       .flatMap { $0.reusables }

@@ -16,7 +16,7 @@ struct ColorStructGenerator: ExternalOnlyStructGenerator {
     self.assetFolders = assetFolders
   }
 
-  func generatedStruct(at externalAccessLevel: AccessLevel, prefix: SwiftIdentifier) -> Struct {
+  func generatedStruct(at externalAccessLevel: AccessLevel, prefix: SwiftIdentifier, bundle: BundleExpression) -> Struct {
     let structName: SwiftIdentifier = "color"
     let qualifiedName = prefix + structName
     let assetFolderColorNames = assetFolders
@@ -33,7 +33,7 @@ struct ColorStructGenerator: ExternalOnlyStructGenerator {
     assetSubfolders.printWarningsForDuplicates()
 
     let structs = assetSubfolders.folders
-      .map { $0.generatedColorStruct(at: externalAccessLevel, prefix: qualifiedName) }
+      .map { $0.generatedColorStruct(at: externalAccessLevel, prefix: qualifiedName, bundle: bundle) }
       .filter { !$0.isEmpty }
 
     let colorLets = groupedColors
@@ -45,7 +45,7 @@ struct ColorStructGenerator: ExternalOnlyStructGenerator {
           isStatic: true,
           name: SwiftIdentifier(name: name),
           typeDefinition: .inferred(Type.ColorResource),
-          value: "Rswift.ColorResource(bundle: R.hostingBundle, name: \"\(name)\")"
+          value: "Rswift.ColorResource(bundle: \(bundle), name: \"\(name)\")"
         )
     }
 
@@ -57,8 +57,13 @@ struct ColorStructGenerator: ExternalOnlyStructGenerator {
       implements: [],
       typealiasses: [],
       properties: colorLets,
-      functions: groupedColors.uniques.map { [ generateColorFunction(for: $0, at: externalAccessLevel, prefix: qualifiedName),
-                                               generateWatchOSColorFunction(for: $0, at: externalAccessLevel, prefix: qualifiedName)] }.flatMap { $0 },
+      functions: groupedColors.uniques.map { name -> [Function] in
+        var functions = [ generateColorFunction(for: name, at: externalAccessLevel, prefix: qualifiedName)]
+        if case .hostingBundle = bundle {
+          functions.append(generateWatchOSColorFunction(for: name, at: externalAccessLevel, prefix: qualifiedName))
+        }
+        return functions
+      }.flatMap { $0 },
       structs: structs,
       classes: [],
       os: []
@@ -69,7 +74,7 @@ struct ColorStructGenerator: ExternalOnlyStructGenerator {
 }
 
 private extension NamespacedAssetSubfolder {
-  func generatedColorStruct(at externalAccessLevel: AccessLevel, prefix: SwiftIdentifier) -> Struct {
+  func generatedColorStruct(at externalAccessLevel: AccessLevel, prefix: SwiftIdentifier, bundle: BundleExpression) -> Struct {
     let allFunctions = colorAssets
     let groupedFunctions = allFunctions.grouped(bySwiftIdentifier: { $0 })
 
@@ -86,7 +91,7 @@ private extension NamespacedAssetSubfolder {
     let structName = SwiftIdentifier(name: self.name)
     let qualifiedName = prefix + structName
     let structs = assetSubfolders.folders
-      .map { $0.generatedColorStruct(at: externalAccessLevel, prefix: qualifiedName) }
+      .map { $0.generatedColorStruct(at: externalAccessLevel, prefix: qualifiedName, bundle: bundle) }
       .filter { !$0.isEmpty }
 
     let colorLets = groupedFunctions
@@ -98,10 +103,10 @@ private extension NamespacedAssetSubfolder {
           isStatic: true,
           name: SwiftIdentifier(name: name),
           typeDefinition: .inferred(Type.ColorResource),
-          value: "Rswift.ColorResource(bundle: R.hostingBundle, name: \"\(colorPath)\(name)\")"
+          value: "Rswift.ColorResource(bundle: \(bundle), name: \"\(colorPath)\(name)\")"
         )
     }
-
+    
     return Struct(
       availables: [],
       comments: ["This `\(qualifiedName)` struct is generated, and contains static references to \(colorLets.count) colors."],
@@ -110,8 +115,13 @@ private extension NamespacedAssetSubfolder {
       implements: [],
       typealiasses: [],
       properties: colorLets,
-      functions: groupedFunctions.uniques.map { [ generateColorFunction(for: $0, at: externalAccessLevel, prefix: qualifiedName),
-                                                  generateWatchOSColorFunction(for: $0, at: externalAccessLevel, prefix: qualifiedName)] }.flatMap { $0 },
+      functions: groupedFunctions.uniques.map { name -> [Function] in
+        var functions = [ generateColorFunction(for: name, at: externalAccessLevel, prefix: qualifiedName)]
+        if case .hostingBundle = bundle {
+          functions.append(generateWatchOSColorFunction(for: name, at: externalAccessLevel, prefix: qualifiedName))
+        }
+        return functions
+      }.flatMap { $0 },
       structs: structs,
       classes: [],
       os: []
